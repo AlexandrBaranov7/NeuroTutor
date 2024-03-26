@@ -23,7 +23,7 @@ def main_menu_render() -> types.ReplyKeyboardMarkup:
                quit_btn)
     return markup
 
-def return_to_main_menu_render():
+def return_to_main_menu_render() -> types.ReplyKeyboardMarkup:
     '''
     Возвращает markup с кнопкой возвращения в главное меню
     '''
