@@ -1,41 +1,44 @@
 ﻿import telebot
-from telebot import types # для указание типов
+import environs
+from telebot import types 
+import menu
+import authorization
 
-bot = telebot.TeleBot('7000047042:AAF7Aat59UnnbTYO_trZXrI-dPh0dDGehAQ')
+env = environs.Env()
+env.read_env('env.env')
+token = env('TG_BOT_TOKEN')
 
+bot = telebot.TeleBot(token)
+
+# Блок авторизации
 @bot.message_handler(commands=['start'])
 def start(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    btn1 = types.KeyboardButton("👋 Поздороваться")
-    btn2 = types.KeyboardButton("❓ Задать вопрос")
-    markup.add(btn1, btn2)
-    bot.send_message(message.chat.id, text="Привет, {0.first_name}! Я тестовый бот для твоей статьи для habr.com".format(message.from_user), reply_markup=markup)
+    '''
+    Необходимо здесь реализовать авторизацию
+    '''
+    authorised = True
+    if authorised:
+        markup = menu.main_menu_render()
+        bot.send_message(message.chat.id, text="Вы вернулись в главное меню", reply_markup=markup)
     
+
+# Блок обработки сообщений и навигации по боту
 @bot.message_handler(content_types=['text'])
 def func(message):
-    if(message.text == "👋 Поздороваться"):
-        bot.send_message(message.chat.id, text="ХАЙ БЕБИ ХАЙ")
-    elif(message.text == "❓ Задать вопрос"):
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        btn1 = types.KeyboardButton("Как меня зовут?")
-        btn2 = types.KeyboardButton("Что я могу?")
-        back = types.KeyboardButton("Вернуться в главное меню")
-        markup.add(btn1, btn2, back)
-        bot.send_message(message.chat.id, text="Задай мне вопрос", reply_markup=markup)
+    '''
+    Обработка сообщений
+    '''
+    bot.send_message(message.chat.id, text=str(message.from_user.id)+' прислал: '+message.text)
     
-    elif(message.text == "Как меня зовут?"):
-        bot.send_message(message.chat.id, "ЗОВИ МЕНЯ ПАПОЙ")
-    
-    elif message.text == "Что я могу?":
-        bot.send_message(message.chat.id, text="А ТЫ?")
-    
-    elif (message.text == "Вернуться в главное меню"):
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        button1 = types.KeyboardButton("👋 Поздороваться")
-        button2 = types.KeyboardButton("❓ Задать вопрос")
-        markup.add(button1, button2)
-        bot.send_message(message.chat.id, text="Вы вернулись в главное меню", reply_markup=markup)
-    else:
-        bot.send_message(message.chat.id, text="Z Z Z ")
+    if (message.text == "Вернуться в главное меню"):
+        bot.send_message(message.chat.id,
+                         text='Вы вернулись в главное меню',
+                         reply_markup=menu.main_menu_render())
+        
+    elif(message.text in ["📓 Текущая аттестация", "📝 Промежуточная аттестация", "🏫 Процесс обучения", "💸 Оплата обучения"]):
+        bot.send_message(message.chat.id,
+                         text=f'Некоторые сведения об блоке {message.text} пользователя {message.from_user.id}',
+                         reply_markup=menu.return_to_main_menu_render())
 
-bot.polling(none_stop=True)
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
