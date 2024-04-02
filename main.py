@@ -16,19 +16,22 @@ def start(message):
     '''
     Первоначально необходимо запросить авторизацию
     '''
+    bot.send_message(message.chat.id,
+                     text=f'Добро пожаловать!',
+                     reply_markup=types.ReplyKeyboardRemove())
     authorization.request(message, bot)
     
 @bot.message_handler(commands=['login'])
-def login(message):
+def user_login(message):
     try:
         _, login, password = message.text.split()
-        if authorization.validation(login, password):
+        if authorization.validation(login, password, message.from_user.id):
             bot.send_message(message.chat.id,
                             text=f'Вы успешно авторизовались!',
                             reply_markup=menu.main_menu_render())
         else:
             bot.send_message(message.chat.id,
-                             text='Похоже, такого пользователя нет.')
+                                text='Похоже, такого пользователя нет.')
     except:
         bot.send_message(message.chat.id,
                             text=f'Проверьте формат вводимых данных')
@@ -41,7 +44,7 @@ def func(message):
     Обработка сообщений
     '''
     if authorization.is_authorised(message.from_user.id):
-        bot.send_message(message.chat.id, text=str(message.from_user.id)+' прислал: '+message.text)
+        #bot.send_message(message.chat.id, text=str(message.from_user.id)+' прислал: '+message.text)
     
         if (message.text == "Вернуться в главное меню"):
             bot.send_message(message.chat.id,
@@ -55,7 +58,10 @@ def func(message):
         elif(message.text == "❌ Выйти из своего аккаунта"):
             bot.send_message(message.chat.id,
                              text=f'Вы вышли из своего аккаунта')
+            authorization.unlogin(message.from_user.id)
             start(message)
+    else:
+         authorization.request(message, bot)
 
 if __name__ == '__main__':
     bot.polling(none_stop=True)
