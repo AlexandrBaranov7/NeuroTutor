@@ -3,7 +3,7 @@
 from telebot import types 
 
 
-def main_menu_render() -> types.ReplyKeyboardMarkup:
+def stunent_main_menu_render() -> types.ReplyKeyboardMarkup:
     '''
     Информирует пользователя о возвращении в главное меню
     Добавляет кнопки навигации 
@@ -31,3 +31,24 @@ def return_to_main_menu_render() -> types.ReplyKeyboardMarkup:
     main_menu_return_btn = types.KeyboardButton("Вернуться в главное меню")
     markup.add(main_menu_return_btn)
     return markup
+
+def admin_menu_render() -> types.ReplyKeyboardMarkup:
+    '''
+    Возвращает интерфейс администратора
+    '''
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    notification_btn = types.KeyboardButton("⌛️ Прислать уведомление")
+    my_notifications_btn = types.KeyboardButton("📖 Мои уведомления")
+    quit_btn = types.KeyboardButton("❌ Выйти из своего аккаунта")
+    markup.add(notification_btn,
+               my_notifications_btn,
+               quit_btn)
+    return markup
+
+def main_menu_render(role):
+    if role == 'admin':
+        return admin_menu_render()
+    elif role == 'student':
+        return stunent_main_menu_render()
+        
+    
