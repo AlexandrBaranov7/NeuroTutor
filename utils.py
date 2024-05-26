@@ -1,4 +1,4 @@
-import re    
+п»їimport re    
 import datetime
 
 def is_valid_datetime(date_time_str):
@@ -11,7 +11,7 @@ def is_valid_datetime(date_time_str):
         hour = int(match.group(4))
         minute = int(match.group(5))
 
-        # Проверка корректности даты
+        # РџСЂРѕРІРµСЂРєР° РєРѕСЂСЂРµРєС‚РЅРѕСЃС‚Рё РґР°С‚С‹
         try:
             import datetime
             dt = datetime.datetime(year, month, day, hour, minute)

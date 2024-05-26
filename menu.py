@@ -10,15 +10,15 @@ def stunent_main_menu_render() -> types.ReplyKeyboardMarkup:
     возвращает экземляр класса markup
     '''
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    current_attestation_btn = types.KeyboardButton("📓 Текущая аттестация")
-    inter_attestation_btn = types.KeyboardButton("📝 Промежуточная аттестация")
-    study_process_btn = types.KeyboardButton("🏫 Процесс обучения")
+    docs_btn = types.KeyboardButton("📓 Документы")
+    basic_info_btn = types.KeyboardButton("📝 Основная информация")
+    military_btn = types.KeyboardButton("💂‍ Воинский учёт")
     financial_questions_btn = types.KeyboardButton("💸 Оплата обучения")
     quit_btn = types.KeyboardButton("❌ Выйти из своего аккаунта")
 
-    markup.add(current_attestation_btn,
-               inter_attestation_btn,
-               study_process_btn,
+    markup.add(docs_btn,
+               basic_info_btn,
+               military_btn,
                financial_questions_btn,
                quit_btn)
     return markup
