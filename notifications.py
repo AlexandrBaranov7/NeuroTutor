@@ -1,14 +1,15 @@
 ﻿import pandas as pd
 import menu
+from strings import *
 
 def make_notification(bot, message):
     bot.send_message(message.chat.id,
-                     text=f'Создайте уведомление.\nНапишите текст и время уведомление в формате\n/notification <текст>::<ГГГГ-ММ-ДД ЧЧ:мм>', 
+                     text=notif_create_request_msg, 
                      reply_markup=menu.return_to_main_menu_render())
 
 def get_existing_notifications(message):
     user_id = message.from_user.id
-    df = pd.read_csv('existing_notification.csv')
+    df = pd.read_csv(existing_notification_path)
     textes = df[df['created_by']==user_id]['text'].tolist()
     dts = df[df['created_by']==user_id]['dt'].tolist()
     
@@ -20,4 +21,4 @@ def get_existing_notifications(message):
         answer_str += '🔴'
         answer_str += i
         answer_str+= '\n'
-    return 'Ваши уведомления:\n'+answer_str
+    return your_notifs_msg+answer_str

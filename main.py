@@ -1,6 +1,7 @@
 ﻿from inline_buttons import *
 from telebot import types 
 from numpy import True_
+from strings import *
 import authorization
 import notifications
 import pandas as pd
@@ -17,9 +18,9 @@ env.read_env('env.env')
 token = env('TG_BOT_TOKEN')
 bot = telebot.TeleBot(token)
 
-def payment_order(): return open(r'Приказ_о_стоимости_обучения_аспирантов_на_2024_2025_учебный_год.pdf', 'rb')
-def millitary_order(): return open(r"Приказ_Об_организации_воинского_учета_граждан,_в_т_ч_бронировнаия.PDF", 'rb')
-def students_list(): return open(r"Списки аспирантов.xlsx", 'rb')
+def payment_order(): return open(costs_order_path, 'rb')
+def millitary_order(): return open(military_order_path, 'rb')
+def students_list(): return open(students_list_path, 'rb')
 
 # Блок авторизации
 @bot.message_handler(commands=['start'])
@@ -29,7 +30,7 @@ def start(message):
     '''
     
     bot.send_message(message.chat.id,
-                     text=f'Добро пожаловать!',
+                     text=welcome_msg,
                      reply_markup=types.ReplyKeyboardRemove())
 
     authorization.request(message, bot)
@@ -41,14 +42,14 @@ def user_login(message):
         role = authorization.validation(login, password, message.from_user.id)
         if role !='unauthorized':            
             bot.send_message(message.chat.id,
-                            text=f'Вы успешно авторизовались!',
+                            text=auth_success_msg,
                             reply_markup=menu.main_menu_render(role))
         else:
             bot.send_message(message.chat.id,
-                                text='Похоже, такого пользователя нет.')
+                                text=auth_not_find_msg)
     except:
         bot.send_message(message.chat.id,
-                            text=f'Проверьте формат вводимых данных')
+                            text=format_error_msg)
     
 @bot.message_handler(commands=['notification'])
 def notification_command(message):
@@ -61,28 +62,28 @@ def notification_command(message):
             if notif_date < utils.get_current_min():
                 assert ValueError
             assert notif_date != False
-            notifications_df = pd.read_csv('existing_notification.csv', index_col=None)
+            notifications_df = pd.read_csv(existing_notification_path, index_col=None)
         
             notifications_df = pd.concat([notifications_df,
                                          pd.DataFrame({'created_by':[message.from_user.id],
                                                        'text':[notif_text],
                                                        'dt':[notif_date]})])
         
-            notifications_df.to_csv('existing_notification.csv', index=None)
+            notifications_df.to_csv(existing_notification_path, index=None)
             bot.send_message(message.chat.id,
-                            text=f'Вы успешно создали уведомление!\n\nВаше уведомление:\n\n{notif_text}\nОно будет отправлено {notif_date}.')
+                            text=notif_created_template_msg.format(notif_text=notif_text, notif_date=notif_date))
         except:
-            bot.send_message(message.chat.id, 'Проверьте формат вводимых данных')
+            bot.send_message(message.chat.id, format_error_msg)
     else:
         bot.send_message(message.chat.id,
-                        text=f'Недостаточно прав для создания уведомления')
+                        text=not_enough_priveleges_msg)
 
 
 def instance_answer(message):
     text = message.text
-    answer = f'Раздел {text}:'
+    answer = instance_answer_template_msg.format(instance=text)
     markup_inline = types.InlineKeyboardMarkup(row_width=1)
-    if text == "💸 Оплата обучения":
+    if text == payment_text:
 
         markup_inline.add(payyment_order_inline_button)
         markup_inline.add(payment_debt_inline_button)
@@ -92,7 +93,7 @@ def instance_answer(message):
         bot.send_message(message.chat.id, answer,
                             reply_markup=markup_inline)
         
-    elif text == "📝 Основная информация":
+    elif text == basic_info_text:
          
         markup_inline.add(schedule_first_inline_button)
         markup_inline.add(schedule_other_inline_button)
@@ -105,15 +106,15 @@ def instance_answer(message):
         bot.send_message(message.chat.id, answer,
                             reply_markup=markup_inline)
         
-    elif text == "📓 Документы":
+    elif text == docs_text:
         markup_inline.add(named_grants_inline_button)
         markup_inline.add(doc_blanks_inline_button)
         
         bot.send_message(message.chat.id, answer,
                             reply_markup=markup_inline)
         
-    elif text == "💂‍ Воинский учёт":
-        msg = 'Актуальный приказ об организации воинского учёта:'
+    elif text == military_order_text:
+        msg = actual_military_order_msg
         bot.send_message(message.chat.id, msg)
         bot.send_document(message.chat.id, millitary_order())
 
@@ -126,24 +127,20 @@ def answer(call):
         role = authorization.validation('student', 'student', call.message.chat.id)
         if role !='unauthorized':            
             bot.send_message(call.message.chat.id,
-                            text=f'Вы успешно авторизовались!',
+                            text=auth_success_msg,
                             reply_markup=menu.main_menu_render(role))
         else:
             bot.send_message(call.message.chat.id,
-                                text='Похоже, такого пользователя нет.')
+                                text=auth_not_find_msg)
     if call_data  == 'admin_auth':
         authorization.admin_login_request(call.message, bot)
     elif call.data == 'payment_order':
-        msg = 'Актуальный приказ по оплате за обучение:'
+        msg = actual_payment_order_msg
         bot.send_message(call.message.chat.id, msg)
         bot.send_document(call.message.chat.id, payment_order())
         
     elif call.data == 'payment_methods':
-        msg = ''' Способы оплаты за обучение\n
-Оплата может быть произведена следующими способами:
-1.	Через личный кабинет аспиранта (раздел документы и финансы => Финансовые сервисы => Информация о состоянии расчетов по платным образовательным услугам)\n
-2.	Через банк (при себе необходимо иметь дополнительное соглашение, которое было выдано Вам в начале учебного года)\n
-3.	Через QR-код на договоре об оплате'''
+        msg = payment_methods_msg
         bot.send_message(call.message.chat.id, msg)
         
     elif call_data == 'science':
@@ -159,24 +156,24 @@ def func(message):
     '''
     if authorization.role(message.from_user.id) != 'unathorized':
         role = authorization.role(message.from_user.id)
-        if (message.text == "Вернуться в главное меню"):
+        if (message.text == return_main_menu_text):
             bot.send_message(message.chat.id,
-                             text='Вы вернулись в главное меню',
+                             text=returned_to_main_menu_msg,
                              reply_markup=menu.main_menu_render(role))
         
-        elif(message.text in ["📓 Документы", "📝 Основная информация", "💂‍ Воинский учёт", "💸 Оплата обучения"]):
+        elif(message.text in [docs_text, basic_info_text, military_order_text, payment_text]):
             instance_answer(message)
 
-        elif(message.text == "❌ Выйти из своего аккаунта"):
+        elif(message.text == quit_text):
             bot.send_message(message.chat.id,
-                             text=f'Вы вышли из своего аккаунта')
+                             text=quited_msg)
             authorization.unlogin(message.from_user.id)
             start(message)
             
         # admin actions
-        elif(message.text == "⌛️ Прислать уведомление") and role == 'admin':
+        elif(message.text == create_notif_text) and role == 'admin':
             notifications.make_notification(bot, message)
-        elif(message.text == "📖 Мои уведомления") and role == 'admin':
+        elif(message.text == my_notifs_text) and role == 'admin':
             nots = notifications.get_existing_notifications(message)
             bot.send_message(message.chat.id, text=nots)
     else:
@@ -188,7 +185,7 @@ def polling():
 def notif_checker():
     while True:
         notifications_df = pd.read_csv('existing_notification.csv', index_col=None)
-        users = pd.read_csv('active_users.csv', index_col=None)
+        users = pd.read_csv(active_users_path, index_col=None)
         
         tg_ids = users[users['role']=='student']['tg_user_id']
         
@@ -197,13 +194,13 @@ def notif_checker():
             for index, row in notifs.iterrows():
                 notif_txt = row['text']
                 creator = row['created_by']
-                bot.send_message(creator, f'Ваше уведомдение ({notif_txt[:15]}...) успешно отправлено {tg_ids.shape[0]} cтудентам.')
+                bot.send_message(creator, notif_created_template_msg.format(notif_text=notif_txt[:15], tg_ids_shape=tg_ids.shape[0]))
                 for uid in tg_ids:
                     bot.send_message(uid, text=notif_txt)
             notifications_df = notifications_df[notifications_df['dt'].astype(str)!=str(utils.get_current_min())]
 
         notifications_df = notifications_df[notifications_df['dt'].astype(str)>=str(utils.get_current_min())]
-        notifications_df.to_csv('existing_notification.csv', index=None)
+        notifications_df.to_csv(existing_notification_path, index=None)
         time.sleep(20)
 
 def main():
