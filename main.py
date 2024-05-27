@@ -1,7 +1,8 @@
-﻿from inline_buttons import *
+﻿from utils.inline_buttons import *
+from utils.strings import *
+import utils.utils as utils
 from telebot import types 
 from numpy import True_
-from strings import *
 import authorization
 import notifications
 import pandas as pd
@@ -9,7 +10,6 @@ import threading
 import environs
 import datetime
 import telebot
-import utils
 import menu
 import time
 
@@ -184,7 +184,7 @@ def polling():
     
 def notif_checker():
     while True:
-        notifications_df = pd.read_csv('existing_notification.csv', index_col=None)
+        notifications_df = pd.read_csv(existing_notification_path, index_col=None)
         users = pd.read_csv(active_users_path, index_col=None)
         
         tg_ids = users[users['role']=='student']['tg_user_id']
@@ -201,7 +201,7 @@ def notif_checker():
 
         notifications_df = notifications_df[notifications_df['dt'].astype(str)>=str(utils.get_current_min())]
         notifications_df.to_csv(existing_notification_path, index=None)
-        time.sleep(20)
+        time.sleep(10)
 
 def main():
     polling_thread = threading.Thread(target=polling)

@@ -1,8 +1,8 @@
 ﻿# Процесс авторизации реализован здесь
-from inline_buttons import *
+from utils.inline_buttons import *
 from telebot import types 
 import pandas as pd
-from strings import *
+from utils.strings import *
 
 def request(message, bot):
     '''

@@ -1,7 +1,7 @@
 ﻿# Здесь реализованы все меню в которых может находиться пользователь, за исключением авторизации
 # Авторизация реализована в authorization.py
+from utils.strings import *
 from telebot import types 
-from strings import *
 
 def stunent_main_menu_render() -> types.ReplyKeyboardMarkup:
     '''

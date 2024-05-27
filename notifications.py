@@ -1,6 +1,6 @@
 ﻿import pandas as pd
 import menu
-from strings import *
+from utils.strings import *
 
 def make_notification(bot, message):
     bot.send_message(message.chat.id,
