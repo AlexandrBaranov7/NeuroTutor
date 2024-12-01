@@ -162,3 +162,5 @@ cython_debug/
 .vs/
 NeuroTutor.pyproj
 NeuroTutor.sln
+
+.DS_store
