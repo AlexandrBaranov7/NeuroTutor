@@ -1,10 +1,15 @@
-﻿from utils.inline_buttons import *
-from utils.strings import *
+﻿# пользовательские модули
+from utils.inline_buttons import * 
+from utils.strings import * 
 import utils.utils as utils
+
 from telebot import types 
 from numpy import True_
-import authorization
-import notifications
+
+import authorization # модуль, в котором реализована авторизация и присвоение ролей
+import notifications # модуль в котором реализованы уведомления
+from dbclient import DBClient as DB, Notification
+
 import pandas as pd
 import threading
 import environs
@@ -15,9 +20,12 @@ import time
 
 env = environs.Env()
 env.read_env('env.env')
-token = env('TG_BOT_TOKEN')
+token = env('TG_BOT_TOKEN') # токен телеграм бота, хранящийся в env.env
+admin_id = env('ADMIN_ID')
 bot = telebot.TeleBot(token)
+db = DB('users')
 
+# функции, считывающие документы
 def payment_order(): return open(costs_order_path, 'rb')
 def millitary_order(): return open(military_order_path, 'rb')
 def students_list(): return open(students_list_path, 'rb')
@@ -35,51 +43,61 @@ def start(message):
 
     authorization.request(message, bot)
     
+# функция будет вызываться при команде пользователя /login
 @bot.message_handler(commands=['login'])
 def user_login(message):
-    try:
+    #try:
+    login_data = message.text.split()
+    if len(login_data) == 3:
         _, login, password = message.text.split()
         role = authorization.validation(login, password, message.from_user.id)
         if role !='unauthorized':            
             bot.send_message(message.chat.id,
                             text=auth_success_msg,
                             reply_markup=menu.main_menu_render(role))
-        else:
+    elif len(login_data) == 2:
+        print('student_auth')
+        _, token = message.text.split()
+        role = authorization.student_validation(minitoken=token, tg_id=message.from_user.id)
+        if role !='unauthorized':            
             bot.send_message(message.chat.id,
-                                text=auth_not_find_msg)
-    except:
+                            text=auth_success_msg,
+                            reply_markup=menu.main_menu_render(role))
+    else:
         bot.send_message(message.chat.id,
-                            text=format_error_msg)
+                            text=auth_not_find_msg)
+    #except:
+    #    bot.send_message(message.chat.id,
+    #                        text=format_error_msg)
     
+# функция будет вызываться при команде /notification
 @bot.message_handler(commands=['notification'])
 def notification_command(message):
     role = authorization.role(message.from_user.id)
     if role == 'admin':
-        notif_text = message.text[14:]
-        try:
-            notif_text, notif_date = notif_text.split('::')
-            notif_date =  utils.is_valid_datetime(notif_date)
-            if notif_date < utils.get_current_min():
-                assert ValueError
-            assert notif_date != False
-            notifications_df = pd.read_csv(existing_notification_path, index_col=None)
-        
-            notifications_df = pd.concat([notifications_df,
-                                         pd.DataFrame({'created_by':[message.from_user.id],
-                                                       'text':[notif_text],
-                                                       'dt':[notif_date]})])
-        
-            notifications_df.to_csv(existing_notification_path, index=None)
-            bot.send_message(message.chat.id,
-                            text=notif_created_template_msg.format(notif_text=notif_text, notif_date=notif_date))
-        except:
-            bot.send_message(message.chat.id, format_error_msg)
+        notifications.create_notification(message)
     else:
         bot.send_message(message.chat.id,
                         text=not_enough_priveleges_msg)
+        
+@bot.message_handler(commands=['feedback'])
+def feedback_collect(message):
+    '''
+    Функция для сбора отзывов
+    '''
+    feedback_text = message.text
+    bot.send_message(admin_id, 'Новый отзыв о боте:\n'+feedback_text)
+    bot.send_message(message.chat.id, 'Ваш отзыв успешно доставлен администратору!')
 
-
-def instance_answer(message):
+# блок обработки сообщений
+def instance_answer(message) -> None:
+    """
+    Функция instance_answer, 
+    Принимает:
+        Объект типа message (сообщения)
+    Возвращает:
+        None
+    """
     text = message.text
     answer = instance_answer_template_msg.format(instance=text)
     markup_inline = types.InlineKeyboardMarkup(row_width=1)
@@ -119,21 +137,18 @@ def instance_answer(message):
         bot.send_document(message.chat.id, millitary_order())
 
         
-        
+# обработка callback, получаемых при нажатии пользователем на inline-кнопки      
 @bot.callback_query_handler(func=lambda call: True)
 def answer(call):
     call_data = call.data
+    print(call.from_user.username, ' : callback - ', call.data)
+    
     if call_data  == 'student_auth':
-        role = authorization.validation('student', 'student', call.message.chat.id)
-        if role !='unauthorized':            
-            bot.send_message(call.message.chat.id,
-                            text=auth_success_msg,
-                            reply_markup=menu.main_menu_render(role))
-        else:
-            bot.send_message(call.message.chat.id,
-                                text=auth_not_find_msg)
+        authorization.student_login_request(call.message, bot)
+        
     if call_data  == 'admin_auth':
         authorization.admin_login_request(call.message, bot)
+        
     elif call.data == 'payment_order':
         msg = actual_payment_order_msg
         bot.send_message(call.message.chat.id, msg)
@@ -146,14 +161,13 @@ def answer(call):
     elif call_data == 'science':
         bot.send_document(call.message.chat.id, students_list())
 
-        
-
 # Блок обработки сообщений и навигации по боту
 @bot.message_handler(content_types=['text'])
 def func(message):
     '''
     Обработка сообщений
     '''
+    print(message.from_user.username, ' : ', message.text)
     if authorization.role(message.from_user.id) != 'unathorized':
         role = authorization.role(message.from_user.id)
         if (message.text == return_main_menu_text):
@@ -180,28 +194,21 @@ def func(message):
          authorization.request(message, bot)
 
 def polling():
-    bot.polling(none_stop=True, logger_level=40)
-    
+    while True:
+        try: 
+            bot.polling(none_stop=True, logger_level=40)
+        except:
+            print('Polling error, retry in 5 seconds...')
+            time.sleep(5)
+            
 def notif_checker():
     while True:
-        notifications_df = pd.read_csv(existing_notification_path, index_col=None)
-        users = pd.read_csv(active_users_path, index_col=None)
-        
-        tg_ids = users[users['role']=='student']['tg_user_id']
-        
-        notifs = notifications_df[notifications_df['dt'].astype(str)==str(utils.get_current_min())]
-        if notifs.shape[0] != 0:
-            for index, row in notifs.iterrows():
-                notif_txt = row['text']
-                creator = row['created_by']
-                bot.send_message(creator, notif_created_template_msg.format(notif_text=notif_txt[:15], tg_ids_shape=tg_ids.shape[0]))
-                for uid in tg_ids:
-                    bot.send_message(uid, text=notif_txt)
-            notifications_df = notifications_df[notifications_df['dt'].astype(str)!=str(utils.get_current_min())]
-
-        notifications_df = notifications_df[notifications_df['dt'].astype(str)>=str(utils.get_current_min())]
-        notifications_df.to_csv(existing_notification_path, index=None)
+        #try: 
+        notifications.check_notifs()
         time.sleep(10)
+        #except:
+        #    print('Notification checking error, retry in 5 seconds...')
+        #    time.sleep(5)
 
 def main():
     polling_thread = threading.Thread(target=polling)
