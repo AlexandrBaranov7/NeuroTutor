@@ -4,8 +4,10 @@ from telebot import types
 import pandas as pd
 from utils.strings import *
 from dbclient import DBClient as DB
+from UrfuApiClient import UrfuApiClient
 
 db = DB('users')
+api = UrfuApiClient()
 
 def request(message, bot):
     '''
@@ -45,7 +47,10 @@ def validation(login, password, tg_user_id):
     return role
          
 def student_validation(minitoken, tg_id): 
-    role = 'student'
+    if api.get_user_info(minitoken).get('fullName'):
+        role = 'student'
+    else:
+        return 'unauthorized'
     db.save_user(tg_id=tg_id, token=minitoken, role=role)
     return role
 

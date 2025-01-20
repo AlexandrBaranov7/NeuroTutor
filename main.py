@@ -1,5 +1,6 @@
 ﻿# пользовательские модули
 from utils.inline_buttons import * 
+from utils.inline_buttons import generate_period_buttons, generate_sem_buttons
 from utils.strings import * 
 import utils.utils as utils
 
@@ -9,6 +10,7 @@ from numpy import True_
 import authorization # модуль, в котором реализована авторизация и присвоение ролей
 import notifications # модуль в котором реализованы уведомления
 from dbclient import DBClient as DB, Notification
+from UrfuApiClient import UrfuApiClient
 
 import pandas as pd
 import threading
@@ -18,6 +20,7 @@ import telebot
 import menu
 import time
 
+api = UrfuApiClient()
 env = environs.Env()
 env.read_env('env.env')
 token = env('TG_BOT_TOKEN') # токен телеграм бота, хранящийся в env.env
@@ -60,9 +63,20 @@ def user_login(message):
         _, token = message.text.split()
         role = authorization.student_validation(minitoken=token, tg_id=message.from_user.id)
         if role !='unauthorized':            
+            full_name = api.get_user_info(db.get_minitoken(tg_id=message.chat.id)).get('fullName')
+            name = ' '.join(full_name.split()[1:])   
+            bot.send_message(message.chat.id,
+                            text=f'Добро пожаловать, {name}!')
+            
             bot.send_message(message.chat.id,
                             text=auth_success_msg,
                             reply_markup=menu.main_menu_render(role))
+        else:
+            bot.send_message(message.chat.id,
+                            text=auth_not_find_msg,
+                            reply_markup=menu.main_menu_render(role))
+            authorization.student_login_request(message, bot)
+
     else:
         bot.send_message(message.chat.id,
                             text=auth_not_find_msg)
@@ -115,8 +129,8 @@ def instance_answer(message) -> None:
          
         markup_inline.add(schedule_first_inline_button)
         markup_inline.add(schedule_other_inline_button)
-        markup_inline.add(session_inter_inline_button)
-        markup_inline.add(session_current_inline_button)
+        markup_inline.add(brs_button)
+        markup_inline.add(debts_inline_button)
         markup_inline.add(group_number_inline_button)
         markup_inline.add(study_plan_inline_button)
         markup_inline.add(science_inline_button)
@@ -161,6 +175,51 @@ def answer(call):
     elif call_data == 'science':
         bot.send_document(call.message.chat.id, students_list())
 
+    elif call_data == 'study_plan':
+        semesters = api.get_semesters(token=db.get_minitoken(tg_id=call.from_user.id))
+        if isinstance(semesters, list):
+            inline_buttons_mes = [generate_sem_buttons(sem) for sem in semesters]
+            markup_inline = types.InlineKeyboardMarkup(row_width=1)
+            for button in inline_buttons_mes:
+                markup_inline.add(button)
+            bot.send_message(call.message.chat.id, 'Выберите семестр:', reply_markup=markup_inline)
+        else:
+            bot.send_message(call.message.chat.id, semesters)
+    elif call_data.startswith('select_semester'):
+        selected_sem = int(call_data.split()[-1])
+        
+        bot.send_message(call.message.chat.id, api.get_eduplan(db.get_minitoken(call.message.chat.id), selected_sem))
+
+    elif call_data == 'BRS':
+        periods_mapping = {
+            'autumn':'Осень',
+            'spring':'Весна'
+        }
+        
+        available_periods = api.get_periods(db.get_minitoken(call.message.chat.id))
+        if isinstance(available_periods, str):
+            bot.send_message(call.message.chat.id, available_periods)
+        else:
+            periods = []
+            inline_buttons_mes = []
+            markup_inline = types.InlineKeyboardMarkup(row_width=1)
+            for year in available_periods:
+                for sem in year['semesters']:
+                    period = f'{year['year']} - {periods_mapping[sem]}'
+                    periods.append(period)
+                    inline_buttons_mes.append(generate_period_buttons(period, year['year'], sem))
+            for i in inline_buttons_mes:
+                markup_inline.add(i)
+            
+            bot.send_message(call.message.chat.id, 'Выберите период:', reply_markup=markup_inline)
+
+    elif call_data.startswith('select_period'):
+        year, sem = call_data.split()[1:]
+        bot.send_message(call.message.chat.id, api.get_brs(db.get_minitoken(call.message.chat.id), year, sem))
+    
+    elif call_data == 'debts':
+        bot.send_message(call.message.chat.id, api.get_debts(db.get_minitoken(call.message.chat.id)))
+
 # Блок обработки сообщений и навигации по боту
 @bot.message_handler(content_types=['text'])
 def func(message):
@@ -195,11 +254,11 @@ def func(message):
 
 def polling():
     while True:
-        try: 
-            bot.polling(none_stop=True, logger_level=40)
-        except:
-            print('Polling error, retry in 5 seconds...')
-            time.sleep(5)
+        #try: 
+        bot.polling(none_stop=True, logger_level=40)
+        #except:
+        #    print('Polling error, retry in 5 seconds...')
+        #    time.sleep(5)
             
 def notif_checker():
     while True:

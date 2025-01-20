@@ -22,15 +22,9 @@ schedule_other_inline_button = types.InlineKeyboardButton(
     url='https://aspirant.urfu.ru/ru/aspirantura/raspisanie-zanjatii/2-3-i-4-kurs/',
     callback_data='schedule_other')
         
-session_inter_inline_button = types.InlineKeyboardButton(
-    text='Промежуточная аттестация',
-    url='https://aspirant.urfu.ru/ru/aspirantura/promezhutochnaja-attestacija/',
-    callback_data='session')
-        
-session_current_inline_button = types.InlineKeyboardButton(
-    text='Итоговая аттестация',
-    url='https://aspirant.urfu.ru/ru/vypuskniku/raspisanie-gosudarstvennoi-itogovoi-attestacii/',
-    callback_data='session')
+brs_button = types.InlineKeyboardButton(
+    text='Мои баллы',
+    callback_data='BRS')
         
 group_number_inline_button = types.InlineKeyboardButton(
     text='Номер группы',
@@ -39,12 +33,15 @@ group_number_inline_button = types.InlineKeyboardButton(
         
 study_plan_inline_button = types.InlineKeyboardButton(
     text='Учебный план',
-    url='https://istudent.urfu.ru/s/eduplan',
     callback_data='study_plan')
         
 science_inline_button = types.InlineKeyboardButton(
     text='Тема работы, научный руководитель',
     callback_data='science')
+
+debts_inline_button = types.InlineKeyboardButton(
+    text='Мои задолженности',
+    callback_data='debts')
 
 # оплата обучения
 
@@ -71,3 +68,13 @@ doc_blanks_inline_button = types.InlineKeyboardButton(
     text='Бланки документов',
     callback_data='doc_blanks',
     url='https://aspirant.urfu.ru/ru/aspirantura/blanki-dokumentov/ ')
+
+def generate_sem_buttons(semester: int):
+    return types.InlineKeyboardButton(
+        text=f'{semester} семестр',
+        callback_data=f'select_semester {semester}')
+
+def generate_period_buttons(period:str, year: str, sem:str):
+    print(period)
+    return types.InlineKeyboardButton(text=period,
+       callback_data=f'select_period {year} {sem}')
