@@ -1,0 +1,5 @@
+costs_order_path = r'info_docs/Приказ_о_стоимости_обучения_аспирантов_на_2024_2025_учебный_год.pdf'
+military_order_path = r'info_docs/Приказ_Об_организации_воинского_учета_граждан,_в_т_ч_бронировнаия.PDF'
+students_list_path = r'info_docs/Списки аспирантов.xlsx'
+existing_notification_path = r'backend_data/existing_notification.csv'
+active_users_path = r'backend_data/active_users.csv'

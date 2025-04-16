@@ -2,7 +2,8 @@
 from utils.inline_buttons import *
 from telebot import types 
 import pandas as pd
-from utils.strings import *
+from utils.messages.from_bot_messages import *
+from utils.messages.to_bot_messages import *
 from dbclient import DBClient as DB
 from UrfuApiClient import UrfuApiClient
 

@@ -1,11 +1,12 @@
 ﻿import pandas as pd
 import menu
-from utils.strings import *
-from main import bot
+from utils.messages.from_bot_messages import *
+from utils.messages.to_bot_messages import *
+from ServiceContainer import service_instance
 import utils.utils as utils
-from dbclient import DBClient as DB
 
-db = DB('Users')
+bot = service_instance.bot
+db = service_instance.db
 
 def make_notification(bot, message):
     bot.send_message(message.chat.id,
