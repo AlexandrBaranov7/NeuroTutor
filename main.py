@@ -27,13 +27,13 @@ class BotController:
         self._register_handlers()
 
     def _register_handlers(self):
-        handlers = {
-            '/start': self.start,
-            '/login': self.user_login,
-            '/notification': self.notification_command,
-            '/feedback': self.feedback_collect,
+        handlers_commands = {
+            'start': self.start,
+            'login': self.user_login,
+            'notification': self.notification_command,
+            'feedback': self.feedback_collect,
         }
-        for cmd, func in handlers.items():
+        for cmd, func in handlers_commands.items():
             self.bot.message_handler(commands=[cmd])(func)
 
         self.bot.callback_query_handler(func=lambda call: True)(self.answer)

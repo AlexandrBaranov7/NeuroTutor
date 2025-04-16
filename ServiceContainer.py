@@ -1,6 +1,6 @@
 from telebot import types, TeleBot
 from environs import Env
-from dbclient import DBClient as DB
+from DBClient import DBClient as DB
 from UrfuApiClient import UrfuApiClient
 
 class ServiceContainer:
