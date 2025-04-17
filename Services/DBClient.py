@@ -23,6 +23,18 @@ class Notification(pw.Model):
         database = pw.SqliteDatabase(db_source)
         table_name = 'Notifications'
 
+class UserProperties(pw.Model):
+    ''' 
+    Получение данных по API может сильно замедлить работу
+    Поэтому предлагается хранить данные о студенте в БД, 
+    периодически их обновляя.
+    Эта таблица может выглядеть так: id, property_name, property, last_requested_at, updated_at
+    Если данные в достаточной мере актуальны, их можно брать из базы
+    Иначе - обновлять.
+    Пока не реализовано. 
+    '''
+    ...
+
 
 class DBClient:
     name = ""
