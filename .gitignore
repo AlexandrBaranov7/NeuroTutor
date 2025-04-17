@@ -166,5 +166,5 @@ NeuroTutor.sln
 .DS_store
 request.http
 users.db
-.ipynb
+apitest.ipynb
 env.env
