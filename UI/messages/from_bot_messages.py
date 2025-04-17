@@ -29,6 +29,7 @@ payment_methods_msg = ''' Способы оплаты за обучение:
 default_error_msg = "Произошла ошибка, попробуйте позднее"
 dormitory_label_msg = "Общежитие"
 operational_label_msg = "Операционные платежи"
+choose_sem_msg = 'Выберите семестр:'
 header_brs_msg = "Ваши баллы за выбранный период:\n\n"
 header_no_brs_msg = "Отсутствуют баллы за выбранный период"
 header_debts_msg = "Ваши долги:\n"

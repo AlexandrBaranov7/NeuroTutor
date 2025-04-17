@@ -173,7 +173,7 @@ class BotController:
             markup = types.InlineKeyboardMarkup(row_width=1)
             for sem in semesters:
                 markup.add(generate_sem_buttons(sem))
-            self.bot.send_message(chat_id, 'Выберите семестр:', reply_markup=markup)
+            self.bot.send_message(chat_id, choose_sem_msg, reply_markup=markup)
         else:
             self.bot.send_message(chat_id, semesters)
 
