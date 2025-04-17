@@ -167,3 +167,4 @@ NeuroTutor.sln
 request.http
 users.db
 .ipynb
+env.env
