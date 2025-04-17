@@ -1,10 +1,8 @@
-# пользовательские модули
 from UI.inline_buttons import * 
 from UI.inline_buttons import generate_period_buttons, generate_sem_buttons
 from utils.pathes import * 
 from UI.messages.from_bot_messages import *
 from UI.messages.to_bot_messages import *
-import utils.utils as utils
 
 from telebot import types
 
@@ -150,18 +148,12 @@ class BotController:
 
     def polling(self):
         while True:
-            try:
-                self.bot.polling(none_stop=True, logger_level=40)
-            except:
-                time.sleep(5)
+            self.bot.polling(none_stop=True, logger_level=40)
 
     def notif_checker(self):
         while True:
-            try:
-                notifications.check_notifs()
-                time.sleep(10)
-            except:
-                time.sleep(5)
+            notifications.check_notifs()
+            time.sleep(10)
 
     # Вспомогательные методы
     def _send_main_menu(self, chat_id, role):

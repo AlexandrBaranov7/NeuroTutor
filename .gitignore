@@ -166,3 +166,4 @@ NeuroTutor.sln
 .DS_store
 request.http
 users.db
+.ipynb
