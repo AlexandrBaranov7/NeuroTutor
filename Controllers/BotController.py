@@ -6,10 +6,10 @@ from UI.messages.to_bot_messages import *
 
 from telebot import types
 
-import Controllers.authorization as authorization # модуль, в котором реализована авторизация и присвоение ролей
-import Controllers.notifications as notifications # модуль в котором реализованы уведомления
-from info_docs.FileManager import FileManager, file_manager_instance as file_manager
-from Services.ServiceContainer import ServiceContainer, service_instance as service
+import Controllers.AuthorizationController as AuthorizationController # модуль, в котором реализована авторизация и присвоение ролей
+import Controllers.NotificationsController as NotificationsController # модуль в котором реализованы уведомления
+from info_docs.FileManager import FileManager
+from Services.ServiceContainer import ServiceContainer
 
 import UI.menu as menu
 import time
@@ -38,19 +38,19 @@ class BotController:
 
     def start(self, message):
         self.bot.send_message(message.chat.id, welcome_msg, reply_markup=types.ReplyKeyboardRemove())
-        authorization.request(message, self.bot)
+        AuthorizationController.request(message, self.bot)
 
     def user_login(self, message):
         login_data = message.text.split()
         try:
             if len(login_data) == 3:
                 _, login, password = login_data
-                role = authorization.validation(login, password, message.from_user.id)
+                role = AuthorizationController.validation(login, password, message.from_user.id)
                 if role != 'unauthorized':
                     self._send_main_menu(message.chat.id, role)
             elif len(login_data) == 2:
                 _, token = login_data
-                role = authorization.student_validation(token, message.from_user.id)
+                role = AuthorizationController.student_validation(token, message.from_user.id)
                 if role != 'unauthorized':
                     full_name = self.api.get_user_info(self.db.get_minitoken(message.chat.id)).get('fullName')
                     name = ' '.join(full_name.split()[1:])
@@ -64,8 +64,8 @@ class BotController:
             ... # must be logging
 
     def notification_command(self, message):
-        if authorization.role(message.from_user.id) == 'admin':
-            notifications.create_notification(message)
+        if AuthorizationController.role(message.from_user.id) == 'admin':
+            NotificationsController.create_notification(message)
         else:
             self.bot.send_message(message.chat.id, not_enough_priveleges_msg)
 
@@ -101,9 +101,9 @@ class BotController:
 
         match data:
             case 'student_auth':
-                authorization.student_login_request(call.message, self.bot)
+                AuthorizationController.student_login_request(call.message, self.bot)
             case 'admin_auth':
-                authorization.admin_login_request(call.message, self.bot)
+                AuthorizationController.admin_login_request(call.message, self.bot)
             case 'payment_order':
                 self._send_document(chat_id, actual_payment_order_msg, self.files.payment_order())
             case 'payment_methods':
@@ -126,7 +126,7 @@ class BotController:
     def message_process(self, message):
         user_id = message.from_user.id
         text = message.text
-        role = authorization.role(user_id)
+        role = AuthorizationController.role(user_id)
 
         if role != 'unathorized':
             match text:
@@ -136,15 +136,15 @@ class BotController:
                     self.instance_answer(message)
                 case _ if text == quit_text:
                     self.bot.send_message(message.chat.id, quited_msg)
-                    authorization.unlogin(user_id)
+                    AuthorizationController.unlogin(user_id)
                     self.start(message)
                 case _ if text == create_notif_text and role == 'admin':
-                    notifications.make_notification(self.bot, message)
+                    NotificationsController.make_notification(self.bot, message)
                 case _ if text == my_notifs_text and role == 'admin':
-                    nots = notifications.get_existing_notifications(message)
+                    nots = NotificationsController.get_existing_notifications(message)
                     self.bot.send_message(message.chat.id, text=nots)
         else:
-            authorization.request(message, self.bot)
+            AuthorizationController.request(message, self.bot)
 
     def polling(self):
         while True:
@@ -152,7 +152,7 @@ class BotController:
 
     def notif_checker(self):
         while True:
-            notifications.check_notifs()
+            NotificationsController.check_notifs()
             time.sleep(10)
 
     # Вспомогательные методы
@@ -161,7 +161,7 @@ class BotController:
 
     def _send_auth_fail(self, message, role):
         self.bot.send_message(message.chat.id, auth_not_find_msg, reply_markup=menu.main_menu_render(role))
-        authorization.student_login_request(message, self.bot)
+        AuthorizationController.student_login_request(message, self.bot)
 
     def _send_document(self, chat_id, msg, file):
         self.bot.send_message(chat_id, msg)
