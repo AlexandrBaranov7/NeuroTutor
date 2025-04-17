@@ -1,185 +1,156 @@
 import requests
+from typing import Any, Optional, Union
+import UI.messages.from_bot_messages as messages
+
 
 class Formatter:
-  '''
-  Будет форматировать полученные данные для читаемого вида
-  '''
-  def format_brs(self, brs: dict) -> str:
-    '''
-    Возвращает многострочную строку с баллами по каждой дисциплине
-    за выбранный период. Оценка округляется до 2 знаков после запятой
-    '''
-    formatted_brs = 'Ваши баллы за выбранный период: \n\n'
-    for discipline in brs:
-      if discipline.get('srd_score') is None: 
-        continue
-      score = float(discipline.get('srd_score'))
-      if score == 0:
-        continue
+    """
+    Класс форматирует полученные данные в читаемый вид.
+    """
 
-      formatted_brs += discipline.get('srd_title') + ' ' + \
-        str(round(float(discipline.get('srd_score')), 2)) + '\n\n'
-    if formatted_brs == 'Ваши баллы за выбранный период: \n\n':
-       return 'Отсутствуют баллы за выбранный период'
-    return formatted_brs
+    def __init__(self):
+      self.DORMITORY_DEBTS_KEY = "DormitoryDebts"
+      self.OPERATIONAL_DEBTS_KEY = "OperationalPaymentBalance"
 
-  def format_debts(self, debts: dict) -> str:
-    '''
-    Возвращает строку, в которой будут задолженности студента
-    '''
-    dormitory_debts = debts.get('DormitoryDebts', [])
-    operational_debts = debts.get('OperationalPaymentBalance', [])
+    def format_brs(self, brs: list[dict[str, Any]]) -> str:
+        results = [
+            f"{discipline['srd_title']} {round(float(discipline['srd_score']), 2)}"
+            for discipline in brs
+            if discipline.get('srd_score') not in (None, 0)
+        ]
+        return messages.header_no_brs_msg if not results else messages.header_brs_msg + "\n\n".join(results)
 
-    dormitory_info = []
-    for debt in dormitory_debts:
-        contract = debt.get('Договор', 'неизвестен')
-        amount = debt.get('Долг', 0)
-        dormitory_info.append(f"  договор {contract}, долг {amount} руб")
+    def format_debts(self, debts: dict[str, Any]) -> str:
+        def format_debt_list(debt_list: list[dict], label: str) -> list[str]:
+            if not debt_list:
+                return [f"{label}: {messages.header_no_debts_msg}"]
+            formatted = [f"{label}:"]
+            for debt in debt_list:
+                contract = debt.get('Договор', messages.unknown_msg)
+                amount = debt.get('Долг', 0)
+                formatted.append(messages.debt_line_template_msg.format(contract=contract, amount=amount))
+            return formatted
 
+        result = [messages.header_debts_msg]
+        result += format_debt_list(debts.get(self.DORMITORY_DEBTS_KEY, []), messages.dormitory_label_msg)
+        result += format_debt_list(debts.get(self.OPERATIONAL_DEBTS_KEY, []), messages.operational_label_msg)
 
-    operational_info = []
-    for debt in operational_debts:
-        contract = debt.get('Договор', 'неизвестен')
-        amount = debt.get('Долг', 0)
-        operational_info.append(f"  Договор {contract}, долг {amount} руб")
+        return "\n".join(result)
 
-    result = ["Ваши долги:\n"]
-    if dormitory_info:
-        result.append("Общежитие:")
-        result.extend(dormitory_info)
-    else:
-        result.append("Общежитие: нет долгов")
+    def format_eduplan(self, eduplan: list[dict[str, Any]], sem: int) -> str:
+        disciplines = [
+            discipline['title']
+            for discipline in eduplan
+            if any(term.get('showInLk') and term.get('number') == sem for term in discipline.get('terms', []))
+        ]
 
-    if operational_info != 0 or not operational_info is None:
-        result.append("Операционные платежи:")
-        result.extend(operational_info)
-    else:
-        result.append("Операционные платежи: нет долгов")
-
-    return "\n".join(result)
-
-
-  def format_eduplan(self, eduplan: dict, sem: int):
-    '''
-    Возвращает отформатированный учебный план
-    '''
-    result = f'Ваши дисциплины за {sem}-й семестр: \n\n'
-
-    for discipline in eduplan:
-        terms = discipline.get('terms')
-        if any([term.get('showInLk') and term.get('number')==sem for term in terms]):
-            result += discipline['title'] + '\n'
-    return result
+        result = messages.your_disciplines_template_msg.format(sem=sem)
+        return result + "\n".join(disciplines) if disciplines else result + messages.header_no_discipline_msg
+    
 
 class UrfuApiClient:
-  """
-  Класс, который будет ходить в апи урфу и забирать данные
-  для передаваемого токена
-  
-  Методы:
-    get_brs - получить брс
-    get_periods - получить фильтры для брс
-    get_eduplan - получить учебный план
-    get_debts - получить задолженности
-  """
-  brs_path = '/api/for-minitoken/brs/new-brs'
-  brs_filter_path = '/api/for-minitoken/brs/new-filters' 
-  eduplan_path = '/api/for-minitoken/student-schedule/eduplan'
-  debts_path = '/api/for-minitoken/ubu/debts'
-  user_info_path = '/api/for-minitoken/user-info'
-  error_msg = 'Произошла ошибка, попробуйте позднее'
-  formatter = Formatter()
+    """
+    Класс, который будет ходить в апи УрФУ и забирать данные
+    для передаваемого токена.
+    """
 
-  def __init__(self, base_url: str="https://urfu-study-api-test.my1.urfu.ru"):
-    self.base_url = base_url
-  
-  def _get_brs_filters(self, token: str) -> list[dict]:
-    '''
-    Возвращаеn возможные фильтры
-    '''
-    authorization_header = {"Authorization": f"Bearer {token}"}
+    BASE_URL = "https://urfu-study-api-test.my1.urfu.ru"
+    PATHS = {
+        "brs": "/api/for-minitoken/brs/new-brs",
+        "filters": "/api/for-minitoken/brs/new-filters",
+        "eduplan": "/api/for-minitoken/student-schedule/eduplan",
+        "debts": "/api/for-minitoken/ubu/debts",
+        "user_info": "/api/for-minitoken/user-info"
+    }
 
-    brs_filters = requests.get(self.base_url+self.brs_filter_path,
-                                headers=authorization_header)
-    if brs_filters.status_code != 200:
-       return self.error_msg
-    return brs_filters.json()[0]
-  
-  def _select_period(self, filter, year, semester):
-    
-    data = filter.copy()
+    ERROR_MSG = messages.default_error_msg
 
-    for period in data.get('periods', []):
-        if period['year'] == year and semester in period['semesters']:
-            return {
-                'studentUid': data['studentUid'],
-                'groupUid': data['groupUid'],
-                'year': year,
-                'semester': semester
+    def __init__(self, base_url: Optional[str] = None) -> None:
+        self.base_url = base_url or self.BASE_URL
+        self.formatter = Formatter()
+
+    def _get_headers(self, token: str) -> dict[str, str]:
+        return {"Authorization": f"Bearer {token}"}
+
+    def _get(self, path: str, token: str, params: Optional[dict] = None) -> Union[dict, str]:
+        response = requests.get(
+            self.base_url + path,
+            headers=self._get_headers(token),
+            params=params
+        )
+        if response.status_code != 200:
+            print(response)
+            return self.ERROR_MSG
+        return response.json()
+
+    def _get_brs_filters(self, token: str) -> Union[dict[str, Any], str]:
+        data = self._get(self.PATHS["filters"], token)
+        if isinstance(data, str):
+            return data
+        return data[0]  # предполагается, что это всегда список с одним словарем
+
+    def _build_period_filter(self, filters: dict[str, Any], year: str, semester: str) -> Optional[dict[str, Any]]:
+        for period in filters.get("periods", []):
+            if period["year"] == year and semester in period["semesters"]:
+                return {
+                    "studentUid": filters["studentUid"],
+                    "groupUid": filters["groupUid"],
+                    "year": year,
+                    "semester": semester
+                }
+        return None
+
+    def get_brs(self, token: str, year: str, semester: str) -> Union[list[dict], str]:
+        filters = self._get_brs_filters(token)
+        if isinstance(filters, str):
+            return filters
+
+        period_filter = self._build_period_filter(filters, year, semester)
+        if not period_filter:
+            return self.ERROR_MSG
+
+        data = self._get(self.PATHS["brs"], token, period_filter)
+        if isinstance(data, str):
+            return data
+        return self.formatter.format_brs(data)
+
+    def get_periods(self, token: str) -> Union[list[dict], str]:
+        filters = self._get_brs_filters(token)
+        if isinstance(filters, str):
+            return filters
+        return filters.get("periods", [])
+
+    def get_raw_eduplan(self, token: str) -> requests.Response:
+        return requests.get(self.base_url + self.PATHS["eduplan"], headers=self._get_headers(token))
+
+    def get_semesters(self, token: str) -> Union[list[int], str]:
+        response = self.get_raw_eduplan(token)
+        if response.status_code != 200:
+            return self.ERROR_MSG
+
+        try:
+            data = response.json()
+            semesters = {
+                term["number"]
+                for plan in data
+                for term in plan.get("terms", [])
+                if "number" in term
             }
-  def get_raw_eduplan(self, token):
-    authorization_header = {"Authorization": f"Bearer {token}"}
-    return requests.get(self.base_url+self.eduplan_path,
-                        headers=authorization_header)
-    
-  def get_periods(self, token):
-    '''
-    Возвращает список возможных периодов
-    '''
-    active_filters = self._get_brs_filters(token)
-    if isinstance(active_filters, str):
-       return active_filters
-    return active_filters['periods']
+            return list(semesters)
+        except Exception:
+            return self.ERROR_MSG
 
-  def get_semesters(self, token):
-    '''
-    Возвращает список семестров
-    '''
-    raw_eduplan = self.get_raw_eduplan(token)
-    if raw_eduplan.status_code != 200:
-       return self.error_msg
-    all_sems = list(dict.fromkeys([_.get('number')\
-                                   for i in [d.get('terms')\
-                                             for d in raw_eduplan.json()] for _ in i]))
-    return all_sems
+    def get_eduplan(self, token: str, sem: int) -> Union[list[dict], str]:
+        data = self._get(self.PATHS["eduplan"], token)
+        if isinstance(data, str):
+            return data
+        return self.formatter.format_eduplan(data, sem=sem)
 
-  def get_brs(self, token: str, year:str, semester:str): 
-    # Важно что год - строка
-    authorization_header = {"Authorization": f"Bearer {token}"}
-    active_filters = self._get_brs_filters(token)
-    
-    filters = self._select_period(
-        filter=active_filters,
-        year=year,
-        semester=semester
-    )
-    response = requests.get(self.base_url+self.brs_path,
-                        headers=authorization_header,
-                        params=filters)
-    print(response.json())
-    if response.status_code != 200:
-       return self.error_msg
-    return self.formatter.format_brs(response.json())
+    def get_debts(self, token: str) -> Union[list[dict], str]:
+        data = self._get(self.PATHS["debts"], token)
+        if isinstance(data, str):
+            return data
+        return self.formatter.format_debts(data)
 
-
-  def get_debts(self, token: str):
-    authorization_header = {"Authorization": f"Bearer {token}"}
-    response = requests.get(self.base_url+self.debts_path,
-                        headers=authorization_header)
-    
-    if response.status_code != 200:
-       return self.error_msg
-    return self.formatter.format_debts(response.json())
-
-  def get_eduplan(self, token: str, sem:int):
-    authorization_header = {"Authorization": f"Bearer {token}"}
-    response = requests.get(self.base_url+self.eduplan_path,
-                        headers=authorization_header)
-    if response.status_code != 200:
-       return self.error_msg
-    return self.formatter.format_eduplan(response.json(), sem=sem)
-  
-  def get_user_info(self, token:str):
-    authorization_header = {"Authorization": f"Bearer {token}"}
-    return requests.get(self.base_url+self.user_info_path,
-                        headers=authorization_header).json()
+    def get_user_info(self, token: str) -> dict[str, Any]:
+        return requests.get(self.base_url + self.PATHS["user_info"], headers=self._get_headers(token)).json()

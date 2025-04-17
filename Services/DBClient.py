@@ -1,4 +1,5 @@
 import peewee as pw
+from typing import Union
 
 db_source = "backend_data/users.db"
 
@@ -40,16 +41,15 @@ class DBClient:
             else:
                 user = User(telegram_id=tg_id, minitoken=token, role=role)
             user.save()
-            print("user saved")
         except:
-            print("Error")
+            pass # logging
 
     def get_minitoken(self, tg_id) -> None:
         try:
             result = User.select().where(User.telegram_id == tg_id).get().minitoken
             return result
         except:
-            print("Error")
+            pass # logging
             
     def create_notification(self, tg_id, text, send_at_dt) -> None:
         try:
@@ -64,7 +64,7 @@ class DBClient:
         except:
             pass
         
-    def get_user_role(self, tg_id) -> str or None:
+    def get_user_role(self, tg_id) -> Union[str, None]:
         try:
             return User.select().where(User.telegram_id == tg_id).get().role
         except:
@@ -89,4 +89,4 @@ class DBClient:
             pass
         
     def del_notification():
-        ...
+        raise NotImplementedError

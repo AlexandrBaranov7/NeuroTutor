@@ -4,7 +4,7 @@ from Controllers.BotController import BotController
 import threading
 
 
-def main():
+def main() -> None:
     bot = BotController(service, file_manager)
     threading.Thread(target=bot.polling).start()
     threading.Thread(target=bot.notif_checker).start()

@@ -1,7 +1,6 @@
 ﻿# Процесс авторизации реализован здесь
 from UI.inline_buttons import *
 from telebot import types 
-import pandas as pd
 from UI.messages.from_bot_messages import *
 from UI.messages.to_bot_messages import *
 from Services.DBClient import DBClient as DB
@@ -48,8 +47,7 @@ def validation(login, password, tg_user_id):
     return role
          
 def student_validation(minitoken, tg_id): 
-    if full_name:=api.get_user_info(minitoken).get('fullName'):
-        print(full_name)
+    if api.get_user_info(minitoken).get('fullName'):
         role = 'student'
     else:
         return 'unauthorized'
@@ -63,7 +61,6 @@ def role(tg_user_id) -> bool:
     '''
     
     role = db.get_user_role(tg_user_id)
-    print('role requested:', role)
     if role:
         return role
     return 'unathorized'
@@ -73,7 +70,6 @@ def unlogin(tg_user_id) -> None:
     '''
     Если пользователь вышел, удаляем его из таблицы
     '''
-    print('unlogin')
     db.del_from_users(tg_user_id)
     
     
