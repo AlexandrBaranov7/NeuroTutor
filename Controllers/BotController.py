@@ -5,6 +5,7 @@ from UI.messages.from_bot_messages import *
 from UI.messages.to_bot_messages import *
 
 from telebot import types
+import telebot
 
 import Controllers.AuthorizationController as AuthorizationController # модуль, в котором реализована авторизация и присвоение ролей
 import Controllers.NotificationsController as NotificationsController # модуль в котором реализованы уведомления
@@ -13,6 +14,10 @@ from Services.ServiceContainer import ServiceContainer
 
 import UI.menu as menu
 import time
+import logging
+
+logger = telebot.logger
+telebot.logger.setLevel(logging.INFO) 
 
 class BotController:
     def __init__(self, services: ServiceContainer, file_manager: FileManager):
@@ -148,7 +153,7 @@ class BotController:
 
     def polling(self):
         while True:
-            self.bot.polling(none_stop=True, logger_level=40)
+            self.bot.polling(non_stop=True, logger_level=logging.INFO)
 
     def notif_checker(self):
         while True:
