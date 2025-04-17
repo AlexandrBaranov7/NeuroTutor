@@ -1,7 +1,8 @@
 import peewee as pw
 from typing import Union
+from utils.pathes import db_path
 
-db_source = "backend_data/users.db"
+db_source = db_path
 
 class User(pw.Model):
     id = pw.PrimaryKeyField()

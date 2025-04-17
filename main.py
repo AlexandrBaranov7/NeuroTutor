@@ -1,6 +1,6 @@
 ﻿import threading
 import logging
-from info_docs.FileManager import file_manager_instance as file_manager
+from docs.FileManager import file_manager_instance as file_manager
 from Services.ServiceContainer import service_instance as service
 from Controllers.BotController import BotController
 

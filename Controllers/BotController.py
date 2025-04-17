@@ -9,7 +9,7 @@ import telebot
 
 import Controllers.AuthorizationController as AuthorizationController # модуль, в котором реализована авторизация и присвоение ролей
 import Controllers.NotificationsController as NotificationsController # модуль в котором реализованы уведомления
-from info_docs.FileManager import FileManager
+from docs.FileManager import FileManager
 from Services.ServiceContainer import ServiceContainer
 
 import UI.menu as menu
