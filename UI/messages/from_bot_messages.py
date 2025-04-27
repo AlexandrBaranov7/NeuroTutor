@@ -37,11 +37,14 @@ header_no_discipline_msg = "Нет дисциплин"
 header_agreement_msg = 'Договор'
 header_no_debts_msg = 'нет долгов'
 unknown_msg = 'неизвестен'
-
+contact_info_ienim_ugi_msg = 'Адрес: пр-т Ленина, 51, аудитория: 202, телефон: 389-93-30 \n\nE-mail: aspirant@urfu.ru'
+contact_info_other_institute_msg = 'Адрес: ул. Софьи Ковалевской, 5, аудитория: Т-1004, телефоны: 375-45-77, 375-95-79 \n\nE-mail: aspirant@urfu.ru'
+choose_institute_msg = 'Выберите свой институт:'
+graduate_msg = 'Информация для выпускников:'
 
 # форматируемые шаблоны _template_msg
 notif_created_template_msg = 'Вы успешно создали уведомление!\n\nВаше уведомление:\n\n{notif_text}\nОно будет отправлено {notif_date}.'
 notif_sended_template_msg = 'Ваше уведомдение ({notif_txt}...) успешно отправлено {tg_ids_shape} cтудентам.'
-instance_answer_template_msg = 'Раздел {instance}:'
+section_answer_template_msg = 'Раздел {section}:'
 debt_line_template_msg = "  Договор {contract}, долг {amount} руб"
 your_disciplines_template_msg = 'Ваши дисциплины за {sem}-й семестр:\n\n'

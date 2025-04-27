@@ -1,6 +1,7 @@
 import requests
 from typing import Any, Optional, Union
 import UI.messages.from_bot_messages as messages
+from functools import lru_cache
 
 
 class Formatter:
@@ -72,6 +73,7 @@ class UrfuApiClient:
     def _get_headers(self, token: str) -> dict[str, str]:
         return {"Authorization": f"Bearer {token}"}
 
+    @lru_cache(maxsize=128)
     def _get(self, path: str, token: str, params: Optional[dict] = None) -> Union[dict, str]:
         response = requests.get(
             self.base_url + path,
@@ -79,7 +81,6 @@ class UrfuApiClient:
             params=params
         )
         if response.status_code != 200:
-            print(response)
             return self.ERROR_MSG
         return response.json()
 
@@ -120,6 +121,7 @@ class UrfuApiClient:
             return filters
         return filters.get("periods", [])
 
+    @lru_cache(maxsize=128)
     def get_raw_eduplan(self, token: str) -> requests.Response:
         return requests.get(self.base_url + self.PATHS["eduplan"], headers=self._get_headers(token))
 
@@ -140,6 +142,7 @@ class UrfuApiClient:
         except Exception:
             return self.ERROR_MSG
 
+    @lru_cache(maxsize=128)
     def get_eduplan(self, token: str, sem: int) -> Union[list[dict], str]:
         data = self._get(self.PATHS["eduplan"], token)
         if isinstance(data, str):

@@ -78,25 +78,28 @@ class BotController:
         self.bot.send_message(self.admin_id, f'Новый отзыв о боте:\n{message.text}')
         self.bot.send_message(message.chat.id, 'Ваш отзыв успешно доставлен администратору!')
 
-    def instance_answer(self, message):
+    def sections_answer(self, message):
         text = message.text
         markup_inline = types.InlineKeyboardMarkup(row_width=1)
         templates = {
             payment_text: [payyment_order_inline_button, payment_debt_inline_button, payyment_methods_inline_button],
             basic_info_text: [
-                schedule_first_inline_button, schedule_other_inline_button, brs_button,
-                debts_inline_button, group_number_inline_button, study_plan_inline_button, science_inline_button
+                schedule_first_inline_button, schedule_other_inline_button, debts_inline_button,
+                group_number_inline_button, study_plan_inline_button, science_inline_button,
+                midterm_examination_inline_buttom, graduate_inline_buttom
             ],
             docs_text: [named_grants_inline_button, doc_blanks_inline_button],
+            contact_text: [contact_ienim_ugi_inline_button, contact_other_institute_inline_button]
         }
 
         if text == military_order_text:
             self.bot.send_message(message.chat.id, actual_military_order_msg)
             self.bot.send_document(message.chat.id, self.files.military_order())
+        
         elif text in templates:
             for btn in templates[text]:
                 markup_inline.add(btn)
-            msg = instance_answer_template_msg.format(instance=text)
+            msg = section_answer_template_msg.format(section=text)
             self.bot.send_message(message.chat.id, msg, reply_markup=markup_inline)
 
     def answer(self, call):
@@ -127,6 +130,16 @@ class BotController:
                 self.bot.send_message(chat_id, self.api.get_brs(self.db.get_minitoken(chat_id), year, sem))
             case 'debts':
                 self.bot.send_message(chat_id, self.api.get_debts(self.db.get_minitoken(chat_id)))
+            case 'graduate':
+                markup_inline = types.InlineKeyboardMarkup(row_width=1)
+                markup_inline.add(graduate_info_inline_button)
+                markup_inline.add(graduate_examination_inline_button)
+                markup_inline.add(gradutate_admission_inline_button)
+                self.bot.send_message(chat_id, graduate_msg, reply_markup=markup_inline)
+            case 'ienim_ugi_contacts':
+                self.bot.send_message(chat_id, contact_info_ienim_ugi_msg)
+            case 'other_institute_contacts':
+                self.bot.send_message(chat_id, contact_info_other_institute_msg)
 
     def message_process(self, message):
         user_id = message.from_user.id
@@ -137,8 +150,9 @@ class BotController:
             match text:
                 case _ if text == return_main_menu_text:
                     self._send_main_menu(message.chat.id, role)
-                case _ if text in [docs_text, basic_info_text, military_order_text, payment_text]:
-                    self.instance_answer(message)
+                case _ if text in [docs_text, basic_info_text, military_order_text, 
+                                   payment_text, contact_text]:
+                    self.sections_answer(message)
                 case _ if text == quit_text:
                     self.bot.send_message(message.chat.id, quited_msg)
                     AuthorizationController.unlogin(user_id)

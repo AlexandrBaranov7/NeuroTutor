@@ -14,13 +14,15 @@ def stunent_main_menu_render() -> types.ReplyKeyboardMarkup:
     basic_info_btn = types.KeyboardButton(basic_info_text)
     military_btn = types.KeyboardButton(military_order_text)
     financial_questions_btn = types.KeyboardButton(payment_text)
+    сontact_buttons = types.KeyboardButton(contact_text)
     quit_btn = types.KeyboardButton(quit_text)
 
     markup.add(docs_btn,
                basic_info_btn,
                military_btn,
                financial_questions_btn,
-               quit_btn)
+               quit_btn, 
+               сontact_buttons)
     return markup
 
 def return_to_main_menu_render() -> types.ReplyKeyboardMarkup:

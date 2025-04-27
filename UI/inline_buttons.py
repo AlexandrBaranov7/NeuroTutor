@@ -33,8 +33,25 @@ group_number_inline_button = types.InlineKeyboardButton(
         
 study_plan_inline_button = types.InlineKeyboardButton(
     text='Учебный план',
-    callback_data='study_plan')
+    url='https://istudent.urfu.ru/s/eduplan',
+    #callback_data='study_plan'
+    )
         
+contact_ienim_ugi_inline_button = types.InlineKeyboardButton(
+    text='ИЕНИМ/УГИ',
+    callback_data='ienim_ugi_contacts'
+)    
+
+contact_other_institute_inline_button = types.InlineKeyboardButton(
+    text='Другой институт',
+    callback_data='other_institute_contacts'
+)    
+
+graduate_inline_buttom = types.InlineKeyboardButton(
+    text='Выпускнику',
+    callback_data='graduate'
+)
+
 science_inline_button = types.InlineKeyboardButton(
     text='Тема работы, научный руководитель',
     callback_data='science')
@@ -57,6 +74,26 @@ payyment_methods_inline_button = types.InlineKeyboardButton(
     text='Способы оплаты за обучение',
     callback_data='payment_methods')
 
+graduate_info_inline_button = types.InlineKeyboardButton(
+    text='Общая информация',
+    url='https://aspirant.urfu.ru/ru/vypuskniku/'
+)
+
+graduate_examination_inline_button = types.InlineKeyboardButton(
+    text='Расписание ГИА',
+    url='https://aspirant.urfu.ru/ru/vypuskniku/raspisanie-gosudarstvennoi-itogovoi-attestacii/'
+)
+
+gradutate_admission_inline_button = types.InlineKeyboardButton(
+    text='Приказы о допуске',
+    url='https://aspirant.urfu.ru/ru/vypuskniku/prikazy-o-dopuske/'
+)
+
+midterm_examination_inline_buttom = types.InlineKeyboardButton(
+    text='Промежуточная аттестация',
+    url='https://aspirant.urfu.ru/ru/aspirantura/promezhutochnaja-attestacija/'
+)
+
 # Документы
 
 named_grants_inline_button = types.InlineKeyboardButton(
@@ -67,7 +104,9 @@ named_grants_inline_button = types.InlineKeyboardButton(
 doc_blanks_inline_button = types.InlineKeyboardButton(
     text='Бланки документов',
     callback_data='doc_blanks',
-    url='https://aspirant.urfu.ru/ru/aspirantura/blanki-dokumentov/ ')
+    url='https://aspirant.urfu.ru/ru/aspirantura/blanki-dokumentov/')
+
+
 
 def generate_sem_buttons(semester: int):
     return types.InlineKeyboardButton(

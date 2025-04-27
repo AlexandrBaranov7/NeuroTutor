@@ -1,4 +1,5 @@
 from utils.pathes import *
+from typing import Literal
 
 class FileManager:
     def __init__(self, costs_path: str, military_path: str, students_path: str):
@@ -14,6 +15,10 @@ class FileManager:
 
     def students_list(self):
         return open(self.students_path, 'rb')
+    
+    def replace_document(doc_type: Literal['military_doc', 'costs_doc', 'students_list_doc']):
+        raise NotImplementedError
+
     
 file_manager_instance = FileManager(
     costs_order_path, 
