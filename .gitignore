@@ -168,3 +168,5 @@ request.http
 users.db
 apitest.ipynb
 env.env
+# local secrets
+env.env
